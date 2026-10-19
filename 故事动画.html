@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinella · Climate–Flood–Health Digital Twin</title>
+<style>
+:root{
+  --navy:#0B2A63; --navy2:#153C86; --blue:#1668E3; --blue2:#3B8BFF; --sky:#E8F0FF;
+  --bg:#F4F7FE; --card:#FFFFFF; --line:#DCE6F7; --ink:#0F2044; --mute:#6B7EA3;
+  --g:#16A34A; --y:#EAB308; --o:#F97316; --r:#DC2626;
+  --sh:0 1px 3px rgba(18,48,110,.07);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0B1B36}
+body{font-family:"Inter","Segoe UI",-apple-system,"Helvetica Neue",Arial,"PingFang SC",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+
+#fit{position:fixed;inset:0;overflow:hidden;background:#0E1726}
+#stage{position:absolute;top:50%;left:50%;width:1600px;height:900px;transform-origin:center center;
+  background:
+    var(--bg);
+  padding:16px 20px;display:flex;flex-direction:column;gap:9px;
+  box-shadow:0 8px 30px rgba(0,0,0,.34);border-radius:4px;overflow:hidden}
+
+/* ---------- topbar ---------- */
+.topbar{height:40px;display:flex;align-items:center;gap:14px;flex:0 0 auto}
+.brand{display:flex;align-items:center;gap:10px}
+.mark{width:34px;height:34px;border-radius:9px;background:var(--navy);display:grid;place-items:center}
+.brand h1{font-size:17px;margin:0;letter-spacing:.15em;font-weight:800;color:var(--navy);line-height:1.1}
+.brand p{margin:1px 0 0;font-size:9.5px;color:var(--mute);letter-spacing:.07em;text-transform:uppercase}
+.pillrow{margin-left:auto;display:flex;align-items:center;gap:7px}
+.pill{font-size:10px;font-weight:600;padding:5px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--navy);white-space:nowrap}
+.pill.live{display:flex;align-items:center;gap:6px;color:#15803D;border-color:#C6E9D2;background:#F3FBF6}
+.dot{width:6px;height:6px;border-radius:50%;background:#16A34A}
+
+/* ---------- timeline ---------- */
+.timeline{flex:0 0 auto;height:74px;background:var(--card);border:1px solid var(--line);border-radius:13px;
+  padding:7px 14px 5px;box-shadow:var(--sh);display:flex;flex-direction:column}
+.tl-head{height:23px;display:flex;align-items:center;gap:11px}
+.tl-title{font-size:10px;font-weight:800;letter-spacing:.11em;color:var(--mute);text-transform:uppercase}
+.tl-clock{font-size:18px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;min-width:74px}
+.tl-phase{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.tl-ctrl{margin-left:auto;display:flex;gap:6px;align-items:center}
+button.btn{font-family:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--navy);
+  font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;transition:.15s;white-space:nowrap}
+button.btn:hover{border-color:var(--blue2);color:var(--blue)}
+button.btn.primary{background:var(--blue);color:#fff;border:1px solid var(--blue)}
+button.btn.primary:hover{color:#fff;filter:brightness(1.09)}
+button.btn.warn{background:#E0532B;color:#fff;border:1px solid #E0532B}
+button.btn.warn:hover{color:#fff}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:99px;outline:none;margin:5px 0 0;
+  background:linear-gradient(90deg,#1668E3 0%,#1668E3 var(--p,0%),#E2EAF8 var(--p,0%),#E2EAF8 100%)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;
+  background:#fff;border:4px solid var(--blue);cursor:pointer;box-shadow:0 2px 7px rgba(11,42,99,.3)}
+.events{position:relative;height:15px}
+.ev{position:absolute;transform:translateX(-50%);font-size:8.5px;font-weight:700;color:var(--blue);white-space:nowrap;padding-top:3px}
+.ev b{background:#EDF3FF;padding:1.5px 6px;border-radius:4px;border:1px solid #D3E2FB}
+.ticks{display:flex;justify-content:space-between;height:11px}
+.ticks span{font-size:8.5px;color:var(--mute);font-weight:600}
+
+/* ---------- main grid ---------- */
+.main{flex:1 1 auto;display:grid;grid-template-columns:296px 660px 1fr;gap:14px;min-height:0}
+.col{display:flex;flex-direction:column;min-height:0}
+.panel-label{height:15px;display:flex;align-items:center;gap:6px;font-size:9.5px;font-weight:800;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--mute);margin-bottom:5px}
+.panel-label i{width:5px;height:5px;border-radius:50%;background:var(--blue);display:inline-block}
+
+/* ---------- phone ---------- */
+.phone{width:296px;height:688px;background:#111C33;border-radius:30px;padding:9px;
+  box-shadow:0 6px 18px rgba(11,42,99,.18);position:relative;flex:0 0 auto}
+.screen{width:100%;height:100%;background:#F7FAFF;border-radius:24px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:96px;height:18px;background:#0B1B36;border-radius:0 0 12px 12px;z-index:9}
+.sbar{height:19px;display:flex;justify-content:space-between;padding:5px 15px 0;font-size:9.5px;font-weight:700;color:var(--navy)}
+.apphead{height:29px;display:flex;align-items:center;gap:7px;padding:2px 12px 6px}
+.applogo{width:21px;height:21px;border-radius:6px;background:linear-gradient(145deg,var(--blue),var(--navy));display:grid;place-items:center}
+.apphead b{font-size:12.5px;color:var(--navy)}
+.bell{margin-left:auto;position:relative}
+.badge{position:absolute;top:-3px;right:-3px;width:13px;height:13px;border-radius:50%;background:var(--r);color:#fff;
+  font-size:7.5px;display:grid;place-items:center;font-weight:800;border:2px solid #F7FAFF}
+.appbody{flex:1 1 auto;overflow:hidden;padding:0 11px}
+.alertcard{border-radius:11px;padding:9px 10px;margin-bottom:7px;color:#fff;transition:.4s}
+.alertcard .t{font-size:11.5px;font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:2px}
+#alertIcon{display:inline-flex;align-items:center;flex:0 0 auto}
+.alertcard .s{font-size:9.5px;opacity:.95;line-height:1.42}
+.locrow{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--mute);font-weight:600;margin-bottom:6px}
+.riskbig{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 10px;margin-bottom:7px}
+.riskbig .lbl{font-size:8.5px;color:var(--mute);font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.riskrow{display:flex;align-items:flex-end;gap:8px;margin-top:1px}
+.risknum{font-size:27px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.risklvl{font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px;margin-bottom:3px}
+.mini{height:5px;border-radius:99px;background:#EDF2FB;margin-top:7px;overflow:hidden}
+.mini i{display:block;height:100%;border-radius:99px;transition:.45s}
+.mrow{display:flex;justify-content:space-between;font-size:8.5px;color:var(--mute);margin-top:4px;font-weight:600}
+.mapcard{background:#fff;border:1px solid var(--line);border-radius:11px;padding:7px;margin-bottom:7px}
+.mapcard .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.mapcard .hd b{font-size:10px;color:var(--navy)}
+.mapcard .hd span{font-size:8px;color:var(--mute)}
+.tips b{font-size:10px;color:var(--navy)}
+.tip{display:flex;gap:7px;align-items:flex-start;background:#fff;border:1px solid var(--line);
+  border-radius:9px;padding:6px 8px;margin-top:5px}
+.tip .ic{width:18px;height:18px;border-radius:5px;background:var(--sky);display:grid;place-items:center;flex:0 0 18px}
+.tip p{margin:0;font-size:9px;line-height:1.42;color:#33477A}
+.reportbtn{width:100%;border:0;border-radius:10px;padding:9px;color:#fff;font-weight:800;font-size:11.5px;
+  font-family:inherit;cursor:pointer;background:var(--blue);
+  display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s}
+.reportbtn:hover{filter:brightness(1.1)}
+.reportbtn:active{transform:scale(.98)}
+.tabbar{flex:0 0 auto;height:42px;display:flex;background:#fff;border-top:1px solid var(--line);padding:5px 0 0}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:8px;font-weight:700;
+  color:#9AACC9;cursor:pointer;transition:.15s}
+.tab.on{color:var(--blue)}
+.toast{position:absolute;left:50%;bottom:60px;transform:translate(-50%,12px);background:rgba(11,27,54,.96);color:#fff;
+  font-size:9.5px;font-weight:600;padding:8px 12px;border-radius:9px;opacity:0;pointer-events:none;transition:.3s;
+  max-width:230px;text-align:center;line-height:1.4;z-index:20}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- cards ---------- */
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 10px;box-shadow:var(--sh);overflow:hidden}
+.card h3{margin:0 0 5px;font-size:11px;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:6px;height:18px}
+.card h3 .r{margin-left:auto;font-size:9px;font-weight:700;color:var(--mute);display:flex;gap:5px;align-items:center}
+.seg{display:flex;background:#F0F5FE;border-radius:7px;padding:2px;gap:2px}
+.seg button{font-family:inherit;border:0;background:transparent;color:var(--mute);font-size:9px;font-weight:700;
+  padding:3px 7px;border-radius:5px;cursor:pointer;transition:.14s;white-space:nowrap}
+.seg button.on{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(11,42,99,.12)}
+.legend{display:flex;gap:8px;flex-wrap:nowrap;margin-top:4px;height:13px;align-items:center}
+.legend div{display:flex;align-items:center;gap:3px;font-size:8.5px;color:var(--mute);font-weight:600;white-space:nowrap}
+.legend i{width:8px;height:8px;border-radius:2.5px;display:inline-block;flex:0 0 8px}
+
+/* dashboard column */
+.dhead{height:26px;display:flex;align-items:center;gap:8px;padding:0 2px;flex:0 0 auto}
+.dhead .ttl{font-size:12.5px;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:6px}
+.chip{font-size:9.5px;font-weight:700;color:var(--navy);background:#fff;border:1px solid var(--line);padding:4px 8px;border-radius:7px;white-space:nowrap}
+.kpis{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;height:128px;flex:0 0 auto}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:11px;padding:7px 10px;position:relative;overflow:hidden;box-shadow:var(--sh)}
+.kpi::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue)}
+.kpi.k2::after{background:#0EA5E9}.kpi.k3::after{background:var(--o)}.kpi.k4::after{background:var(--r)}
+.kpi .l{font-size:8.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}
+.kpi .v{font-size:20px;font-weight:800;color:var(--navy);line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:8.5px;font-weight:700;color:var(--mute)}
+.up{color:var(--r)}.down{color:var(--g)}
+.zdetail{background:#12305F;border-radius:12px;padding:8px 11px;color:#fff;height:88px;flex:0 0 auto}
+.zdetail .n{font-size:12px;font-weight:800;display:flex;align-items:center;gap:6px}
+.zdetail .sub{font-size:8.5px;opacity:.72;margin-top:1px}
+.zstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:5px}
+.zstats div{background:rgba(255,255,255,.11);border-radius:7px;padding:3px 6px}
+.zstats .k{font-size:7.5px;opacity:.75;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.zstats .v{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.25}
+table{width:100%;border-collapse:collapse}
+th{font-size:8px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);
+  text-align:left;padding:0 4px 4px;border-bottom:1px solid var(--line)}
+td{padding:4px;font-size:10px;border-bottom:1px solid #F1F5FC;color:#26386A}
+tr.zrow{cursor:pointer;transition:.13s}
+tr.zrow:hover{background:#F6FAFF}
+tr.zrow.sel{background:#EAF2FF;box-shadow:inset 3px 0 0 var(--blue)}
+.rank{width:17px;height:17px;border-radius:5px;background:#EEF3FC;display:grid;place-items:center;font-size:8.5px;font-weight:800;color:var(--navy)}
+.lv{font-size:8px;font-weight:800;padding:2px 6px;border-radius:5px;color:#fff;white-space:nowrap}
+.bar{height:4px;border-radius:99px;background:#EEF3FC;overflow:hidden;min-width:34px}
+.bar i{display:block;height:100%;border-radius:99px;transition:.4s}
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.act{border:1px solid var(--line);border-radius:9px;padding:7px 6px;text-align:center;background:#FCFDFF;transition:.18s}
+.act.hot{border-color:#FBC7A6;background:#FFF7F1}
+.act .ic{width:23px;height:23px;border-radius:6px;background:var(--sky);display:grid;place-items:center;margin:0 auto 4px}
+.act.hot .ic{background:#FFEBDD}
+.act b{font-size:9.5px;color:var(--navy);display:block;line-height:1.25}
+.act p{margin:3px 0 5px;font-size:8px;color:var(--mute);line-height:1.35;height:22px;overflow:hidden}
+.act button{width:100%;font-family:inherit;font-size:9px;font-weight:800;padding:5px;border-radius:6px;
+  border:0;background:var(--blue);color:#fff;cursor:pointer;transition:.15s}
+.act button:hover{filter:brightness(1.1)}
+.act button.done{background:#16A34A}
+.act button.crit{background:#E0532B}
+.resbars{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
+.rb .t{display:flex;justify-content:space-between;font-size:8.5px;font-weight:700;color:var(--navy)}
+.rb .t em{font-style:normal;color:var(--mute);font-weight:600}
+.rb .bar{margin-top:3px;min-width:0}
+
+/* engines strip */
+.engines{flex:0 0 auto;height:52px;display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+.eng{background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 9px;position:relative;overflow:hidden;
+  display:flex;align-items:center;gap:8px;box-shadow:var(--sh)}
+.eng.act{border-color:var(--blue2);box-shadow:0 0 0 2.5px rgba(59,139,255,.13)}
+.eng .ic{width:26px;height:26px;border-radius:8px;background:var(--sky);display:grid;place-items:center;flex:0 0 26px;font-size:13px}
+.eng .nm{font-size:9.5px;font-weight:800;color:var(--navy);line-height:1.2;white-space:nowrap}
+.eng .nm span{display:block;font-weight:600;color:var(--mute);font-size:8px}
+.eng .st{margin-left:auto;text-align:right;line-height:1.3}
+.eng .st div{font-size:8.5px;color:var(--mute);font-weight:600;white-space:nowrap}
+.eng .st em{font-style:normal;color:var(--navy);font-weight:800;font-variant-numeric:tabular-nums}
+.eng .flow{position:absolute;bottom:0;left:0;height:2px;background:linear-gradient(90deg,transparent,var(--blue2),transparent);
+  width:40%;animation:slide 2.1s linear infinite;opacity:0}
+.eng.act .flow{opacity:1}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+
+.foot{flex:0 0 auto;height:16px;display:flex;align-items:center;gap:10px;font-size:8.5px;color:var(--mute)}
+.foot b{color:var(--navy)}
+.foot .note{background:#FFF8EC;border:1px solid #F5DFB4;border-radius:5px;padding:2px 8px;color:#7A5B14;font-weight:600}
+.zpoly{cursor:pointer;transition:.35s}
+.zpoly:hover{filter:brightness(1.07)}
+.selring{fill:none;stroke:#0B2A63;stroke-width:2.2;stroke-dasharray:5 3;animation:dash 14s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-160}}
+.ripple{transform-origin:center;animation:rip 2.2s ease-out infinite}
+@keyframes rip{0%{r:3;opacity:.85}100%{r:20;opacity:0}}
+
+/* ================= STORY MODE ================= */
+#dim{position:absolute;inset:0;background:rgba(6,17,40,.66);opacity:0;pointer-events:none;transition:.45s;z-index:40}
+#dim.on{opacity:1}
+.spot{position:relative;z-index:55!important;
+  box-shadow:0 0 0 2px #2E7BEA, 0 0 0 9999px rgba(9,18,34,.66)!important;
+  transition:box-shadow .5s ease, transform .5s ease}
+.spot.zoom{transform:scale(1.015)}
+#cursor{position:absolute;left:820px;top:760px;z-index:80;pointer-events:none;opacity:0;
+  transition:opacity .3s, left .68s cubic-bezier(.42,.04,.22,1), top .68s cubic-bezier(.42,.04,.22,1);
+  filter:drop-shadow(0 4px 7px rgba(0,0,0,.45))}
+#cursor.on{opacity:1}
+#cursor .ring{position:absolute;left:-19px;top:-19px;width:44px;height:44px;border-radius:50%;
+  border:3px solid #3B8BFF;opacity:0;transform:scale(.35)}
+#cursor.click .ring{animation:clk .6s ease-out}
+@keyframes clk{0%{opacity:.95;transform:scale(.3)}100%{opacity:0;transform:scale(1.25)}}
+#caption{position:absolute;left:50%;bottom:24px;transform:translateX(-50%) translateY(12px);z-index:76;
+  background:rgba(12,24,44,.92);color:#fff;border-radius:8px;padding:11px 20px;opacity:0;transition:.4s;
+  display:flex;align-items:center;gap:14px}
+#caption.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#caption.top{top:150px;bottom:auto;transform:translateX(-50%) translateY(-14px)}
+#caption.top.on{transform:translateX(-50%) translateY(0)}
+#caption.left{left:330px;transform:translateX(0) translateY(14px)}
+#caption.left.on{transform:translateX(0) translateY(0)}
+#caption .num{display:none}
+#caption .txt{font-size:17.5px;font-weight:600;letter-spacing:.005em;white-space:nowrap}
+#caption .beat{font-size:10.5px;font-weight:700;letter-spacing:.09em;color:#E7A867;white-space:nowrap;
+  padding-left:14px;border-left:1px solid rgba(255,255,255,.2)}
+#storyBar{display:none}
+#btnExit{position:absolute;right:20px;top:16px;z-index:82;display:none;font-family:inherit;cursor:pointer;
+  background:rgba(9,24,54,.9);color:#fff;border:1px solid rgba(120,170,255,.35);border-radius:9px;
+  font-size:11px;font-weight:700;padding:7px 12px}
+#btnExit.on{display:block}
+#overlay{position:absolute;inset:0;z-index:70;display:grid;place-items:center;opacity:0;pointer-events:none;
+  transition:.5s;background:rgba(10,19,35,.88)}
+#overlay.on{opacity:1}
+.ov{display:none;text-align:center;color:#fff}
+.ov.on{display:block;animation:ovIn .6s cubic-bezier(.2,.9,.3,1)}
+@keyframes ovIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.ov h2{font-size:34px;margin:0;font-weight:700;letter-spacing:.15em;color:#fff}
+.ov .tag{font-size:20px;font-weight:600;color:#BBD4F5;margin-top:14px}
+.ov .sub{font-size:12px;color:#7E92B4;margin-top:10px;letter-spacing:.06em}
+#alertCard.flash{animation:flashRing 1.1s ease-out 2}
+@keyframes flashRing{0%{box-shadow:0 0 0 0 rgba(255,255,255,.9)}100%{box-shadow:0 0 0 13px rgba(255,255,255,0)}}
+.flowpath{stroke-dasharray:9 7;animation:fdash .9s linear infinite}
+@keyframes fdash{to{stroke-dashoffset:-16}}
+.fbox{opacity:0;animation:fIn .5s ease-out forwards}
+@keyframes fIn{to{opacity:1}}
+</style>
+</head>
+<body>
+<div id="fit"><div id="stage">
+
+  <!-- ================= TOPBAR ================= -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+          <path d="M12 2.5 4 6v5.5c0 5 3.4 9.2 8 10.2 4.6-1 8-5.2 8-10.2V6z"/>
+          <path d="M8.5 12.2c1.2-1 2.2 1 3.5 0s2.3 1 3.5 0"/>
+        </svg>
+      </div>
+      <div>
+        <h1>SENTINELLA</h1>
+        <p>Climate–Flood–Health Digital Twin · Metro Manila</p>
+      </div>
+    </div>
+    <div class="pillrow">
+      <span class="pill live"><i class="dot"></i>Simulation</span>
+      <span class="pill" id="pillRain">Rainfall 24 h <b>0 mm</b></span>
+      <span class="pill" id="pillExtent">Flood extent <b>0 km²</b></span>
+      <span class="pill" id="pillConf">Illustrative scenario</span>
+      <button class="btn" id="btnFull">Fullscreen</button>
+    </div>
+  </div>
+
+  <!-- ================= TIMELINE ================= -->
+  <div class="timeline">
+    <div class="tl-head">
+      <span class="tl-title">Event timeline</span>
+      <span class="tl-clock" id="clock">Day 0</span>
+      <span class="tl-phase" id="phase">Flood onset</span>
+      <span style="font-size:9.5px;color:var(--mute);font-weight:600" id="dateLbl">24 May 2026</span>
+      <div class="tl-ctrl">
+        <button class="btn" id="btnBack">◀</button>
+        <button class="btn primary" id="btnStory">▶ Story mode</button>
+        <button class="btn" id="btnPlay">▷ Play timeline</button>
+        <button class="btn" id="btnFwd">▶</button>
+        <button class="btn warn" id="btnAct">Deploy early action</button>
+        <button class="btn" id="btnReset">Reset</button>
+      </div>
+    </div>
+    <input type="range" id="slider" min="0" max="28" step="1" value="0">
+    <div class="events" id="events"></div>
+    <div class="ticks">
+      <span>Day 0 · Typhoon landfall</span><span>Week 2</span><span>Week 4</span><span>Week 6</span>
+      <span>Week 8</span><span>Week 10</span><span>Week 12</span><span>Week 14</span>
+    </div>
+  </div>
+
+  <!-- ================= MAIN ================= -->
+  <div class="main">
+
+    <!-- ---------- COL A : phone ---------- -->
+    <div class="col">
+      <div class="panel-label"><i></i>Public app · citizen</div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen">
+          <div class="sbar"><span>9:41</span><span>◗◗◗ ⬤ ▮</span></div>
+          <div class="apphead">
+            <div class="applogo">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
+                <path d="M12 2.5 4 6v5.5c0 5 3.4 9.2 8 10.2 4.6-1 8-5.2 8-10.2V6z"/></svg>
+            </div>
+            <b>Sentinella</b>
+            <div class="bell">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0B2A63" stroke-width="2" stroke-linecap="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+              <span class="badge" id="alertCount">2</span>
+            </div>
+          </div>
+
+          <div class="appbody">
+            <div class="alertcard" id="alertCard">
+              <div class="t"><span id="alertIcon"></span><span id="alertTitle">Flood warning in your area</span></div>
+              <div class="s" id="alertText">Rising water expected within 6 hours.</div>
+            </div>
+
+            <div class="locrow">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6B7EA3" stroke-width="2.4">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span id="myLoc">Brgy. Marikina Flats · Metro Manila</span>
+            </div>
+
+            <div class="riskbig">
+              <div class="lbl">Dengue risk near you</div>
+              <div class="riskrow">
+                <div class="risknum" id="pRisk">12</div>
+                <div class="risklvl" id="pLvl">LOW</div>
+              </div>
+              <div class="mini"><i id="pBar" style="width:12%"></i></div>
+              <div class="mrow"><span>Updated just now</span><span id="pTrend">— stable</span></div>
+            </div>
+
+            <div class="mapcard">
+              <div class="hd"><b>Risk map</b><span id="mapStamp">Synthetic · 8 barangays</span></div>
+              <svg id="phoneMap" viewBox="0 0 456 240" style="width:100%;display:block;border-radius:7px;background:#EFF5FF"></svg>
+              <div class="legend" style="gap:6px">
+                <div><i style="background:#16A34A"></i>Low</div>
+                <div><i style="background:#EAB308"></i>Mod</div>
+                <div><i style="background:#F97316"></i>High</div>
+                <div><i style="background:#DC2626"></i>Very high</div>
+              </div>
+            </div>
+
+            <div class="tips">
+              <b>What you can do now</b>
+              <div id="tipList"></div>
+            </div>
+          </div>
+
+          <div style="padding:6px 11px 5px;flex:0 0 auto">
+            <button class="reportbtn" id="btnReport">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round">
+                <path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4Z"/>
+                <circle cx="12" cy="13" r="3.5"/></svg>
+              Report flood in my street
+            </button>
+          </div>
+
+          <div class="tabbar">
+            <div class="tab on"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home</div>
+            <div class="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Map</div>
+            <div class="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5l3 2"/></svg>Alerts</div>
+            <div class="tab"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>Profile</div>
+          </div>
+          <div class="toast" id="toast"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- COL B : twin map + forecast ---------- -->
+    <div class="col">
+      <div class="panel-label"><i></i>Digital twin · scenario simulation</div>
+      <div class="card" id="mapCard" style="height:394px;flex:0 0 auto;display:flex;flex-direction:column">
+        <h3>Metro Manila digital twin
+          <span class="r">
+            <div class="seg" id="layerSeg">
+              <button data-l="flood" class="on">Flood depth</button>
+              <button data-l="sw">Standing water</button>
+              <button data-l="risk">Dengue risk</button>
+            </div>
+          </span>
+        </h3>
+        <svg id="bigMap" viewBox="0 0 456 240" style="width:100%;height:336px;display:block;border-radius:9px;background:linear-gradient(180deg,#F1F6FF,#E6EFFE)"></svg>
+        <div class="legend" id="mapLegend"></div>
+      </div>
+      <div style="height:10px;flex:0 0 auto"></div>
+      <div class="card" id="chartCard" style="height:277px;flex:0 0 auto;display:flex;flex-direction:column">
+        <h3>Forecast · citywide dengue risk index
+          <span class="r" id="chartNote">2–14 week early-action window</span>
+        </h3>
+        <svg id="chart" viewBox="0 0 620 212" style="width:100%;height:219px;display:block"></svg>
+        <div class="legend">
+          <div><i style="background:#0B2A63"></i>Observed to date</div>
+          <div><i style="background:#1668E3"></i>No-action projection</div>
+          <div><i style="background:#16A34A"></i>With early action</div>
+          <div><i style="background:#FDE3E3"></i>Intervention window</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- COL C : command dashboard ---------- -->
+    <div class="col">
+      <div class="panel-label"><i></i>Government dashboard · decision-maker</div>
+      <div class="dhead">
+        <div class="ttl">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1668E3" stroke-width="2" stroke-linecap="round">
+            <path d="M12 2.5 4 6v5.5c0 5 3.4 9.2 8 10.2 4.6-1 8-5.2 8-10.2V6z"/><path d="m9 12 2 2 4-4"/></svg>
+          Command Dashboard
+        </div>
+        <span class="chip" id="chipDate">24 May 2026</span>
+        <span class="chip" id="chipMode" style="color:#1668E3;border-color:#CFE0FA;background:#F2F7FF">● MONITORING</span>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="l">Flood reports</div><div class="v" id="kFlood">0</div><div class="d" id="kFloodD">—</div></div>
+        <div class="kpi k2"><div class="l">Barangays flooded</div><div class="v" id="kZone">0</div><div class="d">of 8 monitored</div></div>
+        <div class="kpi k3"><div class="l">High-risk zones</div><div class="v" id="kHigh">0</div><div class="d">dengue index &gt; 60</div></div>
+        <div class="kpi k4"><div class="l">Projected cases / wk</div><div class="v" id="kCase">0</div><div class="d" id="kCaseD">—</div></div>
+      </div>
+
+      <div style="height:8px"></div>
+      <div class="zdetail">
+        <div class="n"><span id="zName">Brgy. Quiapo Riverside</span><span class="lv" id="zLv" style="background:#16A34A">LOW</span></div>
+        <div class="sub" id="zSub">population · elevation · historical dengue index</div>
+        <div class="zstats">
+          <div><div class="k">Flood depth</div><div class="v" id="zDepth">0.00 m</div></div>
+          <div><div class="k">Standing water</div><div class="v" id="zSW">0 d</div></div>
+          <div><div class="k">Dengue risk</div><div class="v" id="zRisk">12</div></div>
+          <div><div class="k">Cases / wk</div><div class="v" id="zCase">1</div></div>
+        </div>
+      </div>
+
+      <div style="height:8px"></div>
+      <div class="card" id="rankCard" style="flex:0 0 auto">
+        <h3>Risk priority ranking <span class="r" id="rankStamp">next 72 h</span></h3>
+        <table>
+          <thead><tr><th style="width:22px"></th><th>Barangay</th><th style="width:70px">Level</th><th style="width:74px">Score</th><th style="width:40px">Trend</th></tr></thead>
+          <tbody id="rankBody"></tbody>
+        </table>
+      </div>
+
+      <div style="height:8px"></div>
+      <div class="card" id="actCard" style="flex:1 1 auto">
+        <h3>Recommended actions <span class="r" id="actWin">—</span></h3>
+        <div class="acts" id="actList"></div>
+        <div class="resbars">
+          <div class="rb"><div class="t"><span>Field teams</span><em id="d1m">0/50</em></div><div class="bar"><i id="d1" style="width:0%;background:#1668E3"></i></div></div>
+          <div class="rb"><div class="t"><span>Vector kits</span><em id="d2m">0/500</em></div><div class="bar"><i id="d2" style="width:0%;background:#0EA5E9"></i></div></div>
+          <div class="rb"><div class="t"><span>Outreach</span><em id="d3m">0/5,000</em></div><div class="bar"><i id="d3" style="width:0%;background:#F97316"></i></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="note">Illustrative simulation — synthetic barangay data on a published flood→dengue lag structure. Not a validated forecast.</span>
+    <span>Team Sentinella Watch · <b>Nanjing University</b> · AI4Climate · Research Prototype</span>
+    <span style="margin-left:auto">Keys: ← → step · Space play · click any barangay</span>
+  </div>
+
+
+  <!-- ================= STORY OVERLAYS ================= -->
+  <div id="dim"></div>
+  <div id="cursor">
+    <div class="ring"></div>
+    <svg width="24" height="24" viewBox="0 0 24 24"><path d="M4 2.5 19.5 11 12.6 12.6 9.9 19.6Z" fill="#fff" stroke="#0B2A63" stroke-width="1.6" stroke-linejoin="round"/></svg>
+  </div>
+  <div id="caption"><span class="num">1 / 8</span><span class="txt"></span><span class="beat"></span>
+    <div id="storyBar"><i></i></div></div>
+  <button id="btnExit">✕ Exit story (Esc)</button>
+
+  <div id="overlay">
+    <!-- opening -->
+    <div class="ov" id="ovOpen">
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:6px">
+        <div style="width:44px;height:44px;border-radius:11px;background:#1C4A9E;display:grid;place-items:center">
+          <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+            <path d="M12 2.5 4 6v5.5c0 5 3.4 9.2 8 10.2 4.6-1 8-5.2 8-10.2V6z"/><path d="M8.5 12.2c1.2-1 2.2 1 3.5 0s2.3 1 3.5 0"/></svg>
+        </div>
+        <h2>SENTINELLA</h2>
+      </div>
+      <div class="tag">One flood. One report. One early-action loop.</div>
+      <div class="sub">Metro Manila · Brgy. Marikina Flats · 24 May 2026</div>
+    </div>
+
+    <!-- three-engine flow -->
+    <div class="ov" id="ovFlow">
+      <svg width="1000" height="330" viewBox="0 0 1000 330">
+        <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+          <path d="M0,0 L9,4.5 L0,9 Z" fill="#7FB3FF"/></marker></defs>
+        <g class="fbox" style="animation-delay:.05s">
+          <rect x="12" y="18" width="270" height="66" rx="12" fill="rgba(255,255,255,.07)" stroke="#3B8BFF" stroke-width="1.4"/>
+          <g transform="translate(30,26) scale(.85)" fill="none" stroke="#7FB3FF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.4 7.6c2.6-2.2 5.2-2.2 7.8 0s5.2 2.2 7.8 0M2.4 12.4c2.6-2.2 5.2-2.2 7.8 0s5.2 2.2 7.8 0M2.4 17.2c2.6-2.2 5.2-2.2 7.8 0s5.2 2.2 7.8 0"/></g><text x="62" y="45" font-size="14" font-weight="800" fill="#fff">Engine 1 · Hydrodynamic</text>
+          <text x="62" y="67" font-size="13" fill="#9FC6FF">Flood depth and duration</text>
+        </g>
+        <g class="fbox" style="animation-delay:.35s">
+          <rect x="12" y="130" width="270" height="66" rx="12" fill="rgba(255,255,255,.07)" stroke="#3B8BFF" stroke-width="1.4"/>
+          <g transform="translate(30,138) scale(.85)" fill="none" stroke="#7FB3FF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.6" r="2.3"/><path d="M12 9.9v8.4"/><path d="M12 13 5.6 8.6M12 13l6.4-4.4M12 17.2l-3.6 3M12 17.2l3.6 3"/></g><text x="62" y="157" font-size="14" font-weight="800" fill="#fff">Engine 2 · Epidemiological</text>
+          <text x="62" y="179" font-size="13" fill="#9FC6FF">Historical dengue and weather</text>
+        </g>
+        <g class="fbox" style="animation-delay:.65s">
+          <rect x="12" y="242" width="270" height="66" rx="12" fill="rgba(255,255,255,.07)" stroke="#3B8BFF" stroke-width="1.4"/>
+          <g transform="translate(30,250) scale(.85)" fill="none" stroke="#7FB3FF" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.6 20c0-3.7 2.9-5.7 6.4-5.7s6.4 2 6.4 5.7"/><path d="M16.8 5.3a3.4 3.4 0 0 1 0 6.3M17.8 14.7c2.3.6 3.6 2.4 3.6 5.3"/></g><text x="62" y="269" font-size="14" font-weight="800" fill="#fff">Engine 3 · Community</text>
+          <text x="62" y="291" font-size="13" fill="#9FC6FF">Verified citizen reports</text>
+        </g>
+        <path class="flowpath" d="M282,51 C340,51 350,163 420,163" fill="none" stroke="#7FB3FF" stroke-width="2.2" marker-end="url(#ar)"/>
+        <path class="flowpath" d="M282,163 L420,163" fill="none" stroke="#7FB3FF" stroke-width="2.2" marker-end="url(#ar)"/>
+        <path class="flowpath" d="M282,275 C340,275 350,163 420,163" fill="none" stroke="#7FB3FF" stroke-width="2.2" marker-end="url(#ar)"/>
+        <g class="fbox" style="animation-delay:1.05s">
+          <rect x="428" y="122" width="248" height="82" rx="14" fill="rgba(59,139,255,.18)" stroke="#7FB3FF" stroke-width="1.8"/>
+          <text x="552" y="153" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">Neighborhood</text>
+          <text x="552" y="176" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">dengue risk</text>
+          <text x="552" y="194" text-anchor="middle" font-size="11" fill="#9FC6FF">per barangay · 2–14 weeks ahead</text>
+        </g>
+        <path class="flowpath" d="M676,163 L744,163" fill="none" stroke="#7FB3FF" stroke-width="2.2" marker-end="url(#ar)"/>
+        <g class="fbox" style="animation-delay:1.45s">
+          <rect x="752" y="122" width="236" height="82" rx="14" fill="rgba(22,163,74,.2)" stroke="#5FD98C" stroke-width="1.8"/>
+          <text x="870" y="153" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">Ranked</text>
+          <text x="870" y="176" text-anchor="middle" font-size="16" font-weight="800" fill="#fff">early actions</text>
+          <text x="870" y="194" text-anchor="middle" font-size="11" fill="#B4EDC8">who acts, where, this week</text>
+        </g>
+      </svg>
+      <div class="tag" style="font-size:19px;margin-top:2px">Three engines turn observations into risk intelligence</div>
+    </div>
+
+    <!-- closing loop -->
+    <div class="ov" id="ovClose">
+      <svg width="460" height="300" viewBox="0 0 460 300">
+        <defs><marker id="ar2" markerWidth="8" markerHeight="8" refX="6.4" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#7FB3FF"/></marker></defs>
+        <path class="flowpath" d="M268.6,63.2 A95,95 0 0 1 316.8,111.4" fill="none" stroke="#7FB3FF" stroke-width="2.2" marker-end="url(#ar2)"/>
+        <path class="flowpath" d="M316.8,188.6 A95,95 0 0 1 268.6,236.8" fill="none" stroke="#7FB3FF" stroke-width="2.2" marker-end="url(#ar2)"/>
+        <path class="flowpath" d="M191.4,236.8 A95,95 0 0 1 143.2,188.6" fill="none" stroke="#7FB3FF" stroke-width="2.2" marker-end="url(#ar2)"/>
+        <path class="flowpath" d="M143.2,111.4 A95,95 0 0 1 191.4,63.2" fill="none" stroke="#7FB3FF" stroke-width="2.2" marker-end="url(#ar2)"/>
+        <g fill="rgba(59,139,255,.16)" stroke="#7FB3FF" stroke-width="1.5">
+          <circle cx="230" cy="55" r="28"/><circle cx="325" cy="150" r="28"/>
+          <circle cx="230" cy="245" r="28"/><circle cx="135" cy="150" r="28"/>
+        </g>
+        <g fill="none" stroke="#DCE9FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <g transform="translate(218,43)"><circle cx="12" cy="10.6" r="6.4"/><path d="M6.4 20.4h11.2"/><path d="m9.4 9 1.2 1.2"/></g>
+          <g transform="translate(313,138)"><circle cx="12" cy="12" r="8.8"/><path d="m15.8 8.2-2.3 5.3-5.3 2.3 2.3-5.3z"/></g>
+          <g transform="translate(218,233)"><path d="m3 11 13.4-5.8v13.6L3 13Z"/><path d="M3 11v3.4a2 2 0 0 0 2 2h1.4"/><path d="M18.6 9.2a3.2 3.2 0 0 1 0 5.6"/></g>
+          <g transform="translate(123,138)"><path d="M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2M7.9 16.1a5.8 5.8 0 0 1 0-8.2M16.1 7.9a5.8 5.8 0 0 1 0 8.2"/><circle cx="12" cy="12" r="1.6"/></g>
+        </g>
+        <g font-size="10.5" font-weight="700" fill="#8FAFD8" letter-spacing="1.4">
+          <text x="230" y="18" text-anchor="middle">PREDICT</text>
+          <text x="362" y="154" text-anchor="start">DECIDE</text>
+          <text x="230" y="292" text-anchor="middle">ACT</text>
+          <text x="98" y="154" text-anchor="end">MONITOR</text>
+        </g>
+      </svg>
+      <div class="tag" style="margin-top:2px">From passive monitoring to proactive public action.</div>
+      <div class="sub">Team Sentinella Watch · Nanjing University</div>
+  </div>
+
+</div></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ======================= SCALE TO FIT 16:9 ======================= */
+const stage = document.getElementById("stage");
+let SCALE = 1;
+function fitStage(){
+  SCALE = Math.min(window.innerWidth/1600, window.innerHeight/900);
+  stage.style.transform = "translate(-50%,-50%) scale(" + SCALE + ")";
+}
+window.addEventListener("resize", fitStage); fitStage();
+document.getElementById("btnFull").addEventListener("click", ()=>{
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+});
+
+/* ======================= DATA ======================= */
+const ZONES = [
+  {id:"BGY-101", name:"Quiapo Riverside", pop:128400, elev:2.1, hist:0.86, susc:0.97, drain:0.22,
+   path:"M22,32 L124,22 L134,106 L30,118 Z", cx:78, cy:69},
+  {id:"BGY-118", name:"Northbank Zone",   pop:96200,  elev:3.4, hist:0.71, susc:0.82, drain:0.35,
+   path:"M124,22 L228,26 L236,108 L134,106 Z", cx:180, cy:65},
+  {id:"BGY-124", name:"Old Town",         pop:74800,  elev:5.8, hist:0.58, susc:0.51, drain:0.58,
+   path:"M228,26 L332,20 L338,100 L236,108 Z", cx:283, cy:63},
+  {id:"BGY-133", name:"Lowland East",     pop:112700, elev:2.6, hist:0.79, susc:0.90, drain:0.26,
+   path:"M332,20 L434,32 L436,112 L338,100 Z", cx:385, cy:66},
+  {id:"BGY-147", name:"South Sector",     pop:88300,  elev:4.2, hist:0.63, susc:0.64, drain:0.47,
+   path:"M236,108 L338,100 L344,200 L242,212 Z", cx:290, cy:155},
+  {id:"BGY-152", name:"Marikina Flats",   pop:141500, elev:1.8, hist:0.92, susc:1.00, drain:0.18,
+   path:"M30,118 L134,106 L142,206 L36,218 Z", cx:85, cy:162},
+  {id:"BGY-160", name:"Pasig Delta",      pop:103900, elev:2.3, hist:0.81, susc:0.93, drain:0.24,
+   path:"M134,106 L236,108 L242,212 L142,206 Z", cx:188, cy:158},
+  {id:"BGY-171", name:"Bay Fringe",       pop:67400,  elev:6.9, hist:0.44, susc:0.38, drain:0.70,
+   path:"M338,100 L436,112 L440,194 L344,200 Z", cx:389, cy:151}
+];
+const RIVER = "M4,92 C86,70 146,136 228,108 S356,142 452,104";
+const HOME = 5, STEPS = 28, HALF = 0.5;   // 5 = Brgy. Marikina Flats — the barangay the story follows
+const w = s => s * HALF;
+
+function rain(week){
+  return Math.max(0, 300*Math.exp(-Math.pow(week/0.42,2)) + 55*Math.exp(-week/1.5) + 18 + 9*Math.sin(week*0.9));
+}
+function floodDepth(z, week){
+  return Math.max(0, z.susc*1.55*Math.exp(-Math.pow(week/0.55,2))
+                   + z.susc*0.42*Math.exp(-week/(0.7 + 1.6*(1-z.drain))));
+}
+function standingWater(z, week){
+  const tau = 1.0 + 4.2*(1 - z.drain);
+  return Math.max(0, 7*z.susc*Math.exp(-week/tau));
+}
+const KERN = (()=>{ const k=[]; let s=0;
+  for(let u=0; u<=14; u+=HALF){ const v = Math.pow(u,2.1)*Math.exp(-u/1.75); k.push(v); s+=v; }
+  return k.map(v=>v/s);
+})();
+function buildRisk(iv){
+  return ZONES.map(z=>{
+    const a=[];
+    for(let s=0; s<=STEPS; s++){
+      let conv=0;
+      for(let u=0; u<KERN.length; u++){ const src=s-u; if(src<0) continue;
+        conv += KERN[u] * standingWater(z, w(src))/7; }
+      let r = 8 + 6*z.hist + 176*z.hist*conv;
+      if(iv!==null && s>iv){ r *= (1 - 0.38*Math.min(1,(s-iv)/4)); }
+      a.push(Math.max(4, Math.min(100, r)));
+    }
+    return a;
+  });
+}
+const casesOf = (z, r) => Math.round(z.pop/100000 * r * 0.62);
+
+/* ======================= STATE ======================= */
+let step=0, playing=false, timer=null, interventionStep=null, sel=HOME, extraReports=0, layer="flood";
+let focusZone=null;   // story mode: dim every barangay except this one
+let RISK = buildRisk(null); const BASE = buildRisk(null);
+
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString("en-US");
+const RCOL = r => r>=75?"#DC2626" : r>=55?"#F97316" : r>=32?"#EAB308" : "#16A34A";
+const RLVL = r => r>=75?"VERY HIGH" : r>=55?"HIGH" : r>=32?"MODERATE" : "LOW";
+const leg = arr => arr.map(a=>`<div><i style="background:${a[0]}"></i>${a[1]}</div>`).join("");
+
+/* ======================= MAP ======================= */
+function drawMap(svg, small){
+  let h = `<defs><linearGradient id="wg${small?'s':'b'}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5FA8FF"/><stop offset="100%" stop-color="#1668E3"/></linearGradient></defs>`;
+  ZONES.forEach((z,i)=>{ h += `<path class="zpoly" data-z="${i}" d="${z.path}" fill="#DCE7FA" stroke="#fff" stroke-width="2"/>`; });
+  h += `<path d="${RIVER}" fill="none" stroke="#8FC2FF" stroke-width="8" stroke-linecap="round" opacity=".55" pointer-events="none"/>`;
+  h += `<path d="${RIVER}" fill="none" stroke="#4A94F5" stroke-width="3" stroke-linecap="round" opacity=".8" pointer-events="none"/>`;
+  h += `<g id="${small?'pOv':'bOv'}"></g><g id="${small?'pLb':'bLb'}"></g>`;
+  svg.innerHTML = h;
+  svg.querySelectorAll(".zpoly").forEach(p=>p.addEventListener("click", ()=>{ sel=+p.dataset.z; render(); }));
+}
+function paintMap(svg, small){
+  const ov = svg.querySelector("#"+(small?"pOv":"bOv")), lb = svg.querySelector("#"+(small?"pLb":"bLb"));
+  const mode = small ? "risk" : layer, wk = w(step);
+  let o="", l="";
+  const foc = focusZone;
+  ZONES.forEach((z,i)=>{
+    const off = (foc!==null && i!==foc);          // story spotlight: everything else recedes
+    let col, op;
+    if(mode==="flood"){ const v=floodDepth(z,wk); op=Math.min(.92, v/1.6); col=`url(#wg${small?'s':'b'})`; }
+    else if(mode==="sw"){ const v=standingWater(z,wk); op=Math.min(.9, v/7); col="#0EA5E9"; }
+    else { const v=RISK[i][step]; op=Math.min(.93,.22+v/125); col=RCOL(v); }
+    if(off) op *= .2;
+    o += `<path d="${z.path}" fill="${col}" opacity="${op.toFixed(3)}" style="transition:opacity .45s" pointer-events="none"/>`;
+    if(off) o += `<path d="${z.path}" fill="#F4F7FE" opacity=".55" pointer-events="none" style="transition:opacity .45s"/>`;
+    if(i===sel && !off) o += `<path class="selring" d="${z.path}"/>`;
+    const r = RISK[i][step];
+    if(i===foc){
+      o += `<path d="${z.path}" fill="none" stroke="${mode==="risk"?RCOL(r):"#1668E3"}" stroke-width="3.4" style="transition:stroke .45s"/>`;
+      o += `<circle class="ripple" cx="${z.cx}" cy="${z.cy}" r="3" fill="none" stroke="${mode==="risk"?RCOL(r):"#1668E3"}" stroke-width="2.6"/>`;
+    }
+    if(r>=55 && !off && i!==foc) o += `<circle class="ripple" cx="${z.cx}" cy="${z.cy}" r="3" fill="none" stroke="${RCOL(r)}" stroke-width="2.2"/>`;
+    o += `<circle cx="${z.cx}" cy="${z.cy}" r="${small?3:3.6}" fill="${mode==="risk"?RCOL(r):"#0B2A63"}" opacity="${off?.3:1}" stroke="#fff" stroke-width="1.5" pointer-events="none"/>`;
+    if(!small){
+      const txt = mode==="flood" ? floodDepth(z,wk).toFixed(2)+" m"
+                : mode==="sw"    ? standingWater(z,wk).toFixed(1)+" d"
+                :                  Math.round(r);
+      const fo = off ? .28 : 1, big = (i===foc);
+      l += `<text x="${z.cx}" y="${z.cy-9}" text-anchor="middle" font-size="${big?15:11}" font-weight="800" fill="#0B2A63" fill-opacity="${fo}" style="paint-order:stroke;stroke:#fff;stroke-width:${big?4.6:3.4};transition:font-size .4s">${txt}</text>`;
+      l += `<text x="${z.cx}" y="${z.cy+(big?20:16)}" text-anchor="middle" font-size="${big?10.5:8.4}" font-weight="700" fill="#4A5F8B" fill-opacity="${fo}" style="paint-order:stroke;stroke:#fff;stroke-width:3">${z.name}</text>`;
+    }
+  });
+  if(!small && foc!==null){                       // projection-legible callout for the followed barangay
+    const z=ZONES[foc], r=RISK[foc][step], c=RCOL(r);
+    l += `<g><rect x="6" y="6" width="226" height="62" rx="10" fill="#fff" stroke="${c}" stroke-width="2"/>
+      <rect x="6" y="6" width="5" height="62" rx="2.5" fill="${c}"/>
+      <text x="20" y="26" font-size="13" font-weight="800" fill="#0B2A63">Brgy. ${z.name}</text>
+      <text x="20" y="46" font-size="19" font-weight="800" fill="${c}">${Math.round(r)}</text>
+      <text x="${20+String(Math.round(r)).length*12+6}" y="46" font-size="11" font-weight="800" fill="${c}">${RLVL(r)}</text>
+      <text x="20" y="61" font-size="9.5" font-weight="700" fill="#6B7EA3">Flood ${floodDepth(z,wk).toFixed(2)} m · standing water ${standingWater(z,wk).toFixed(1)} d</text></g>`;
+  }
+  if(!small && extraReports>0){
+    const pins=[[62,96],[112,52],[160,140],[96,190],[262,180],[300,120],[404,92],[210,96]];
+    for(let i=0;i<Math.min(extraReports,pins.length);i++){
+      l += `<g transform="translate(${pins[i][0]},${pins[i][1]})">
+        <path d="M0,-12 C5,-12 8.2,-8.3 8.2,-3.9 C8.2,1.8 0,9 0,9 C0,9 -8.2,1.8 -8.2,-3.9 C-8.2,-8.3 -5,-12 0,-12Z"
+        fill="#1668E3" stroke="#fff" stroke-width="1.6"/><circle cy="-4" r="2.8" fill="#fff"/></g>`;
+    }
+  }
+  ov.innerHTML=o; lb.innerHTML=l;
+  if(!small){
+    const L=$("mapLegend");
+    const tail = `<div style="margin-left:auto">${clockLabel()} · click a barangay to inspect</div>`;
+    if(mode==="flood") L.innerHTML = leg([["#CFE3FF","0 m"],["#8FC2FF","0.4 m"],["#4A94F5","0.8 m"],["#1668E3","1.2 m+"]])+tail;
+    else if(mode==="sw") L.innerHTML = leg([["#D6EEFB","0 d"],["#8ED4F2","2 d"],["#38B6E8","4 d"],["#0EA5E9","7 d"]])+tail;
+    else L.innerHTML = leg([["#16A34A","Low"],["#EAB308","Moderate"],["#F97316","High"],["#DC2626","Very high"]])+tail;
+  }
+}
+
+/* ======================= CHART ======================= */
+function drawChart(){
+  const W=620,H=212,L=32,R=10,T=12,B=24, iw=W-L-R, ih=H-T-B;
+  const cityOf = (M,s)=>{ let t=0,p=0; ZONES.forEach((z,i)=>{t+=M[i][s]*z.pop;p+=z.pop}); return t/p; };
+  const X = s => L + iw*s/STEPS, Y = v => T + ih*(1 - v/100);
+  let h = "";
+  h += `<rect x="${X(4)}" y="${T}" width="${X(28)-X(4)}" height="${ih}" fill="#FDE3E3" opacity=".5"/>`;
+  h += `<text x="${X(4)+6}" y="${T+12}" font-size="9" font-weight="800" fill="#C2410C">EARLY-ACTION WINDOW (2–14 WK)</text>`;
+  for(let v=0; v<=100; v+=25){
+    h += `<line x1="${L}" y1="${Y(v)}" x2="${W-R}" y2="${Y(v)}" stroke="#E7EEFA"/>`;
+    h += `<text x="${L-6}" y="${Y(v)+3}" text-anchor="end" font-size="8.5" fill="#8195B8" font-weight="600">${v}</text>`;
+  }
+  for(let s=0; s<=STEPS; s+=4)
+    h += `<text x="${X(s)}" y="${H-8}" text-anchor="middle" font-size="8.5" fill="#8195B8" font-weight="600">${s===0?"Day 0":"W"+w(s)}</text>`;
+  const pathOf = M => "M" + Array.from({length:STEPS+1},(_,s)=>`${X(s).toFixed(1)},${Y(cityOf(M,s)).toFixed(1)}`).join(" L");
+  h += `<path d="${pathOf(BASE)}" fill="none" stroke="#1668E3" stroke-width="2" stroke-dasharray="${interventionStep!==null?"5 4":"0"}" opacity="${interventionStep!==null?.55:1}"/>`;
+  if(interventionStep!==null){
+    h += `<path d="${pathOf(RISK)}" fill="none" stroke="#16A34A" stroke-width="2.4"/>`;
+    const top = Array.from({length:STEPS+1},(_,s)=>`${X(s).toFixed(1)},${Y(cityOf(BASE,s)).toFixed(1)}`).join(" L");
+    const bot = Array.from({length:STEPS+1},(_,s)=>`${X(STEPS-s).toFixed(1)},${Y(cityOf(RISK,STEPS-s)).toFixed(1)}`).join(" L");
+    h += `<path d="M${top} L${bot} Z" fill="#16A34A" opacity=".13"/>`;
+    h += `<line x1="${X(interventionStep)}" y1="${T}" x2="${X(interventionStep)}" y2="${T+ih}" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+    h += `<text x="${X(interventionStep)+4}" y="${T+ih-5}" font-size="8" font-weight="800" fill="#15803D">ACTION DEPLOYED</text>`;
+  }
+  const ob = "M" + Array.from({length:step+1},(_,s)=>`${X(s).toFixed(1)},${Y(cityOf(RISK,s)).toFixed(1)}`).join(" L");
+  h += `<path d="${ob}" fill="none" stroke="#0B2A63" stroke-width="3" stroke-linecap="round"/>`;
+  h += `<line x1="${X(step)}" y1="${T}" x2="${X(step)}" y2="${T+ih}" stroke="#0B2A63" stroke-width="1.2"/>`;
+  const cy = Y(cityOf(RISK,step));
+  h += `<circle cx="${X(step)}" cy="${cy}" r="4.5" fill="#fff" stroke="#0B2A63" stroke-width="2.8"/>`;
+  const bx = Math.min(X(step)+7, W-R-58);
+  h += `<rect x="${bx}" y="${Math.max(T, cy-21)}" width="54" height="17" rx="4.5" fill="#0B2A63"/>`;
+  h += `<text x="${bx+27}" y="${Math.max(T,cy-21)+12}" text-anchor="middle" font-size="9" font-weight="800" fill="#fff">index ${cityOf(RISK,step).toFixed(0)}</text>`;
+  $("chart").innerHTML = h;
+}
+
+
+/* ======================= INLINE ICON SET =======================
+   Emoji render differently (or not at all) across machines and projectors,
+   so every pictogram in the UI is a stroked SVG path instead. */
+const ICON = {
+  alert:'<path d="M12 3.2 2.6 19.5h18.8L12 3.2Z"/><path d="M12 9.4v4.3"/><path d="M12 16.6h.01"/>',
+  droplet:'<path d="M12 3.2s5.6 5.6 5.6 9.2a5.6 5.6 0 0 1-11.2 0C6.4 8.8 12 3.2 12 3.2Z"/>',
+  bug:'<circle cx="12" cy="7.6" r="2.3"/><path d="M12 9.9v8.4"/><path d="M12 13 5.6 8.6M12 13l6.4-4.4M12 17.2l-3.6 3M12 17.2l3.6 3"/>',
+  home:'<path d="m3 10.5 9-7 9 7V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20Z"/>',
+  camera:'<path d="M20 19.5H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3l1.6-2.4h6.8L17 7.5h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2Z"/><circle cx="12" cy="13.2" r="3.2"/>',
+  plug:'<path d="M9 2.6v5M15 2.6v5M6.6 7.6h10.8v3.2a5.4 5.4 0 0 1-10.8 0Z"/><path d="M12 16.2v5.2"/>',
+  bucket:'<path d="M3.6 7.4h16.8l-2 13.2H5.6Z"/><path d="M3.6 7.4c0-1.6 3.8-2.9 8.4-2.9s8.4 1.3 8.4 2.9"/>',
+  grid:'<rect x="2.8" y="4.8" width="18.4" height="14.4" rx="2"/><path d="M2.8 9.6h18.4M2.8 14.4h18.4M9.2 4.8v14.4M14.8 4.8v14.4"/>',
+  shield:'<path d="M12 2.5 4 6v5.5c0 5 3.4 9.2 8 10.2 4.6-1 8-5.2 8-10.2V6z"/>',
+  shirt:'<path d="M8.2 3 4 5.6 6.2 9.4l2-1.1v12.8h7.6V8.3l2 1.1L20 5.6 15.8 3a3.9 3.9 0 0 1-7.6 0Z"/>',
+  leaf:'<path d="M4 20.2C4 10.4 11.6 3.8 20.4 3.8c0 9.4-6.4 16.4-16.4 16.4Z"/><path d="M4.4 20c3.8-4.8 7.8-7.8 11.8-9.2"/>',
+  bed:'<path d="M3 7.4v12.2M3 12.4h11.6a4.4 4.4 0 0 1 4.4 4.4v2.8M3 19.6h18"/><circle cx="7.2" cy="10.2" r="1.7"/>',
+  phone:'<path d="M6.4 3h3.2l1.6 4-2 1.4a12.4 12.4 0 0 0 6.4 6.4l1.4-2 4 1.6v3.2a2 2 0 0 1-2.2 2C11.4 19 5 12.6 4.4 5.2A2 2 0 0 1 6.4 3Z"/>',
+  check:'<path d="M20 6.4 9 17.4l-5-5"/>',
+  chart:'<path d="M3 3v18h18"/><path d="m7 14.4 4-4.2 3 3 5-6.2"/>',
+  bell:'<path d="M18 8.4A6 6 0 0 0 6 8.4c0 6.6-3 8.6-3 8.6h18s-3-2-3-8.6"/><path d="M13.7 20.6a2 2 0 0 1-3.4 0"/>',
+  buoy:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.8"/><path d="M5.6 5.6 9.3 9.3M14.7 14.7l3.7 3.7M18.4 5.6l-3.7 3.7M9.3 14.7l-3.7 3.7"/>',
+  signal:'<path d="M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2M7.9 16.1a5.8 5.8 0 0 1 0-8.2M16.1 7.9a5.8 5.8 0 0 1 0 8.2"/><circle cx="12" cy="12" r="1.6"/>',
+  flask:'<path d="M9 2.8h6M10.2 2.8v6.6L4.7 18a2 2 0 0 0 1.7 3h11.2a2 2 0 0 0 1.7-3l-5.5-8.6V2.8"/>',
+  megaphone:'<path d="m3 11 13.4-5.8v13.6L3 13Z"/><path d="M3 11v3.4a2 2 0 0 0 2 2h1.4"/><path d="M18.6 9.2a3.2 3.2 0 0 1 0 5.6"/>',
+  hospital:'<path d="M4 21V6.4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1V21"/><path d="M2 21h20M12 9v6.4M8.8 12.2h6.4"/>',
+  users:'<circle cx="9" cy="8" r="3.4"/><path d="M2.6 20c0-3.7 2.9-5.7 6.4-5.7s6.4 2 6.4 5.7"/><path d="M16.8 5.3a3.4 3.4 0 0 1 0 6.3M17.8 14.7c2.3.6 3.6 2.4 3.6 5.3"/>',
+  refresh:'<path d="M20.6 12a8.6 8.6 0 1 1-3-6.6"/><path d="M20.6 3.8v5.2h-5.2"/>',
+  folder:'<path d="M3 7.2a2 2 0 0 1 2-2h3.8l2 2.4h8.2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+  target:'<circle cx="12" cy="12" r="8.8"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.2"/>',
+  waves:'<path d="M2.4 7.6c2.6-2.2 5.2-2.2 7.8 0s5.2 2.2 7.8 0M2.4 12.4c2.6-2.2 5.2-2.2 7.8 0s5.2 2.2 7.8 0M2.4 17.2c2.6-2.2 5.2-2.2 7.8 0s5.2 2.2 7.8 0"/>',
+  compass:'<circle cx="12" cy="12" r="8.8"/><path d="m15.8 8.2-2.3 5.3-5.3 2.3 2.3-5.3z"/>',
+  predict:'<circle cx="12" cy="10.6" r="6.4"/><path d="M6.4 20.4h11.2"/><path d="m9.4 9 1.2 1.2"/>'
+};
+function ic(n, col, px){
+  return `<svg width="${px||13}" height="${px||13}" viewBox="0 0 24 24" fill="none" stroke="${col||'#1668E3'}"
+    stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block">${ICON[n]||ICON.target}</svg>`;
+}
+
+/* ======================= COPY ======================= */
+function phaseOf(s){ const k=w(s);
+  if(k<1)   return {n:"Flood onset",       c:"#1668E3", bg:"#E7F0FF"};
+  if(k<2.5) return {n:"Water receding",    c:"#0EA5E9", bg:"#E4F6FE"};
+  if(k<5)   return {n:"Breeding build-up", c:"#EAB308", bg:"#FEF6DC"};
+  if(k<9)   return {n:"Transmission surge",c:"#DC2626", bg:"#FDECEC"};
+  return           {n:"Decline / recovery",c:"#16A34A", bg:"#E7F7EC"};
+}
+const clockLabel = () => step===0 ? "Day 0" : "Week "+w(step);
+function dateLabel(){ const d=new Date(2026,4,24); d.setDate(d.getDate()+Math.round(w(step)*7));
+  return d.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
+const TIPS = {
+  flood:[["home","Move to higher ground; do not wade through floodwater."],
+         ["camera","Photograph water depth near your home — it improves the city model."],
+         ["plug","Switch off electricity at the mains if water enters the house."]],
+  water:[["bucket","Empty and scrub any container holding water within 48 hours."],
+         ["grid","Clear blocked drains and gutters on your street."],
+         ["shield","Cover water storage tanks tightly."]],
+  breed:[["bug","Breeding peaks now — check tyres, pots and gutters weekly."],
+         ["shirt","Wear long sleeves at dawn and dusk; use repellent."],
+         ["leaf","Report standing water you cannot clear yourself."]],
+  surge:[["alert","Transmission is active — seek care for fever lasting over 2 days."],
+         ["bed","Use bed nets for infants and elderly household members."],
+         ["phone","Free vector-control visit available — request it in the app."]],
+  rec:[["check","Risk is declining. Keep weekly container checks going."],
+       ["chart","Your reports helped cut projected cases in this barangay."],
+       ["bell","Alerts stay on until the risk index drops below 25."]]
+};
+const tipKey = () => { const k=w(step); return k<1?"flood":k<2.5?"water":k<5?"breed":k<9?"surge":"rec"; };
+function shade(hex,amt){ const n=parseInt(hex.slice(1),16), cl=v=>Math.max(0,Math.min(255,v));
+  return "#"+(((cl((n>>16)+amt))<<16)|((cl(((n>>8)&255)+amt))<<8)|cl((n&255)+amt)).toString(16).padStart(6,"0"); }
+
+/* ======================= RENDER ======================= */
+function render(){
+  const wk = w(step), ph = phaseOf(step);
+  $("slider").value = step;
+  $("slider").style.setProperty("--p", (step/STEPS*100)+"%");
+  $("clock").textContent = clockLabel();
+  $("dateLbl").textContent = dateLabel();
+  $("chipDate").textContent = dateLabel();
+  const p=$("phase"); p.textContent=ph.n; p.style.color=ph.c; p.style.background=ph.bg;
+
+  let flooded=0, high=0, cases=0, baseCases=0, cityRisk=0, popTot=0, extent=0, swZones=0;
+  ZONES.forEach((z,i)=>{
+    const fd=floodDepth(z,wk), sw=standingWater(z,wk), r=RISK[i][step];
+    if(fd>0.12){ flooded++; extent += 5.4*z.susc*Math.min(1,fd/1.1); }
+    if(sw>1.2) swZones++;
+    if(r>=60) high++;
+    cases += casesOf(z,r); baseCases += casesOf(z,BASE[i][step]);
+    cityRisk += r*z.pop; popTot += z.pop;
+  });
+  cityRisk /= popTot;
+
+  const floodReports = Math.round(1450*Math.exp(-Math.pow(wk/0.8,2)) + 180*Math.exp(-wk/2.2)) + extraReports*37;
+  $("kFlood").textContent = fmt(floodReports);
+  $("kFloodD").innerHTML = wk<1.5 ? '<span class="up">▲ surging</span> submissions' : '<span class="down">▼ receding</span> vs peak';
+  $("kZone").textContent = flooded;
+  $("kHigh").textContent = high;
+  $("kCase").textContent = fmt(cases);
+  const averted = Math.max(0, baseCases - cases);
+  $("kCaseD").innerHTML = (interventionStep!==null && averted>0)
+    ? `<span class="down">▼ ${fmt(averted)} averted this week</span>`
+    : (wk>2 && wk<9 ? '<span class="up">▲ rising</span> — lagged from flood' : 'projected from twin');
+
+  const cm=$("chipMode");
+  if(interventionStep!==null && step>=interventionStep){
+    cm.textContent="● EARLY ACTION ACTIVE"; cm.style.color="#15803D"; cm.style.borderColor="#BBE9C8"; cm.style.background="#F0FCF3";
+  } else if(cityRisk>=55){
+    cm.textContent="● ALERT — ACTION REQUIRED"; cm.style.color="#DC2626"; cm.style.borderColor="#F6C6C6"; cm.style.background="#FEF3F3";
+  } else {
+    cm.textContent="● MONITORING"; cm.style.color="#1668E3"; cm.style.borderColor="#CFE0FA"; cm.style.background="#F2F7FF";
+  }
+
+  const z=ZONES[sel], r=RISK[sel][step];
+  $("zName").textContent = "Brgy. " + z.name;
+  $("zSub").textContent = `${z.id} · pop ${fmt(z.pop)} · elevation ${z.elev} m · historical dengue index ${z.hist}`;
+  const lv=$("zLv"); lv.textContent=RLVL(r); lv.style.background=RCOL(r);
+  $("zDepth").textContent = floodDepth(z,wk).toFixed(2)+" m";
+  $("zSW").textContent = standingWater(z,wk).toFixed(1)+" d";
+  $("zRisk").textContent = Math.round(r);
+  $("zCase").textContent = fmt(casesOf(z,r));
+
+  const order = ZONES.map((zz,i)=>({i, r:RISK[i][step], prev:RISK[i][Math.max(0,step-2)]})).sort((a,b)=>b.r-a.r);
+  $("rankBody").innerHTML = order.map((o,k)=>{
+    const zz=ZONES[o.i], d=o.r-o.prev;
+    const tr = d>1.5?`<span class="up">▲${d.toFixed(0)}</span>` : d<-1.5?`<span class="down">▼${Math.abs(d).toFixed(0)}</span>` : '<span style="color:#8195B8">—</span>';
+    return `<tr class="zrow ${o.i===sel?'sel':''}" data-z="${o.i}">
+      <td><div class="rank">${k+1}</div></td>
+      <td><b style="color:#0B2A63">${zz.name}</b><div style="font-size:8px;color:#8195B8">${zz.id} · ${fmt(zz.pop)}</div></td>
+      <td><span class="lv" style="background:${RCOL(o.r)}">${RLVL(o.r)}</span></td>
+      <td><div style="display:flex;align-items:center;gap:5px"><b style="font-size:11px;color:#0B2A63;min-width:15px">${Math.round(o.r)}</b><div class="bar" style="flex:1"><i style="width:${o.r}%;background:${RCOL(o.r)}"></i></div></div></td>
+      <td style="font-size:9px;font-weight:700">${tr}</td></tr>`;
+  }).join("");
+  $("rankBody").querySelectorAll(".zrow").forEach(tr=>tr.addEventListener("click",()=>{sel=+tr.dataset.z;render();}));
+  $("rankStamp").textContent = `${high} zone${high===1?"":"s"} above action threshold`;
+
+  const deployed = interventionStep!==null && step>=interventionStep;
+  const A = wk<1.5 ? [
+      ["alert","Evacuation advisory",`Flood advisory to ${flooded} barangays`,"crit"],
+      ["buoy","Pre-position assets","Boats and teams to riverside zones",""],
+      ["signal","Amplify reporting","In-app prompt for depth photos",""]
+    ] : wk<5 ? [
+      ["bucket","Source reduction",`Clear standing water in ${swZones} zones — highest yield now`,"crit"],
+      ["flask","Larvicide priority",`Target ${ZONES[order[0].i].name} + ${ZONES[order[1].i].name}`,""],
+      ["megaphone","Prevention messaging","SMS + push on container checks",""]
+    ] : wk<9 ? [
+      ["bug","Adult vector control",`Fogging in ${high} high-risk barangays`,"crit"],
+      ["hospital","Surge clinic capacity",`Prepare for ~${fmt(cases)} cases / week`,""],
+      ["users","Community outreach","Door-to-door in top-3 ranked zones",""]
+    ] : [
+      ["chart","Post-event evaluation","Compare projected vs observed cases",""],
+      ["refresh","Recalibrate model","Feed observed outcomes to engines",""],
+      ["folder","LGU impact report","Publish averted-case + cost estimate",""]
+    ];
+  $("actList").innerHTML = A.map(a=>`<div class="act ${a[3]==='crit'?'hot':''}">
+      <div class="ic">${ic(a[0], a[3]==="crit"?"#F97316":"#1668E3", 13)}</div><b>${a[1]}</b><p>${a[2]}</p>
+      <button class="${deployed?'done':(a[3]==='crit'?'crit':'')}">${deployed?'✓ Deployed':'Deploy'}</button></div>`).join("");
+  $("actList").querySelectorAll("button").forEach(b=>b.addEventListener("click", ()=>{
+    if(interventionStep===null) applyIntervention(); else toast("Action already deployed at week "+w(interventionStep));
+  }));
+  $("actWin").textContent = wk<2 ? "response phase" : wk<9 ? `${(14-wk).toFixed(1)} wk of window left` : "recovery phase";
+
+  const util = deployed ? Math.min(1,.3+(step-interventionStep)/10) : Math.min(.34, wk/9);
+  setBar("d1", util*.92, 50, "");
+  setBar("d2", util*.78, 500, "");
+  setBar("d3", util*.86, 5000, "");
+
+  const conf = Math.min(98, 91+extraReports);
+  $("pillConf").textContent = "Illustrative scenario";
+  $("pillRain").innerHTML = "Rainfall 24 h <b>" + Math.round(rain(wk)) + " mm</b>";
+  $("pillExtent").innerHTML = "Flood extent <b>" + extent.toFixed(1) + " km²</b>";
+  let cum=0;
+  if(interventionStep!==null) for(let s=0;s<=step;s++)
+    ZONES.forEach((zz,i)=>{ cum += Math.max(0, casesOf(zz,BASE[i][s]) - casesOf(zz,RISK[i][s]))/2; });
+  const cn = $("chartNote");
+  if(interventionStep!==null && cum>0){
+    cn.innerHTML = `<span style="color:#15803D">▼ ${fmt(Math.round(cum))} cases averted (cumulative)</span>`;
+  } else { cn.textContent = "2–14 week early-action window"; }
+
+  const hr = RISK[HOME][step];
+  $("pRisk").textContent = Math.round(hr); $("pRisk").style.color = RCOL(hr);
+  const pl=$("pLvl"); pl.textContent=RLVL(hr); pl.style.background=RCOL(hr)+"1F"; pl.style.color=RCOL(hr);
+  $("pBar").style.width = hr+"%"; $("pBar").style.background = RCOL(hr);
+  const prev = RISK[HOME][Math.max(0,step-2)];
+  $("pTrend").innerHTML = hr-prev>1.5?'<span class="up">▲ rising</span>':hr-prev<-1.5?'<span class="down">▼ falling</span>':'— stable';
+  const copy = wk<1   ? ["alert","Flood warning in your area","Rising water expected within 6 hours. Move valuables to higher ground."]
+             : wk<2.5 ? ["droplet","Water receding — act now","Standing water near you will breed mosquitoes in about 10 days. Clear containers today."]
+             : wk<5   ? ["bug","Mosquito breeding building up","Dengue risk here is forecast to rise over the next 3 weeks. Weekly checks matter most now."]
+             : wk<9   ? ["alert","High dengue risk in your area","Active transmission nearby. Use repellent; seek care for fever over 2 days."]
+             :          ["check","Risk declining in your area","Prevention worked. Keep weekly checks — the season is not over yet."];
+  $("alertIcon").innerHTML=ic(copy[0],"#fff",13); $("alertTitle").textContent=copy[1]; $("alertText").textContent=copy[2];
+  const ac = RCOL(Math.max(hr, wk<1?70:hr));
+  $("alertCard").style.background = `linear-gradient(135deg, ${ac}, ${shade(ac,-24)})`;
+  $("alertCount").textContent = wk<1?2:wk<5?3:4;
+  $("tipList").innerHTML = TIPS[tipKey()].map(t=>`<div class="tip"><div class="ic">${ic(t[0],"#1668E3",11)}</div><p>${t[1]}</p></div>`).join("");
+  $("mapStamp").textContent = clockLabel()+" · 8 barangays";
+  $("myLoc").textContent = "Brgy. " + ZONES[HOME].name + " · Metro Manila";
+
+  paintMap($("bigMap"), false);
+  paintMap($("phoneMap"), true);
+  drawChart();
+}
+function setBar(id, frac, total){
+  frac = Math.max(0, Math.min(1, frac));
+  $(id).style.width = (frac*100).toFixed(0)+"%";
+  $(id+"m").textContent = fmt(Math.round(frac*total))+"/"+fmt(total);
+}
+
+/* ======================= INTERACTION ======================= */
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"), 2600);
+}
+function applyIntervention(){
+  interventionStep = step;
+  RISK = buildRisk(interventionStep);
+  $("btnAct").textContent = "✓ Deployed · W"+w(step);
+  $("btnAct").disabled = true;
+  render();
+  toast("Vector control assigned. Forecast updated for the next 8 weeks.");
+}
+const setStep = s => { step = Math.max(0, Math.min(STEPS, s)); render(); };
+function play(){
+  if(playing) return stop();
+  if(step>=STEPS) step=0;
+  playing=true; $("btnPlay").textContent="❚❚ Pause";
+  timer=setInterval(()=>{ if(step>=STEPS) return stop(); setStep(step+1); }, 620);
+}
+function stop(){ playing=false; clearInterval(timer); $("btnPlay").textContent="▶ Play scenario"; }
+
+$("slider").addEventListener("input", e=>{ if(story.on) endStory(); stop(); setStep(+e.target.value); });
+$("btnPlay").addEventListener("click", play);
+$("btnBack").addEventListener("click", ()=>{ stop(); setStep(step-1); });
+$("btnFwd").addEventListener("click", ()=>{ stop(); setStep(step+1); });
+$("btnAct").addEventListener("click", ()=>{ if(interventionStep===null) applyIntervention(); });
+$("btnReset").addEventListener("click", ()=>{
+  stop(); interventionStep=null; extraReports=0; sel=HOME; step=0; RISK=buildRisk(null);
+  $("btnAct").textContent="Deploy early action"; $("btnAct").disabled=false; render();
+});
+$("btnReport").addEventListener("click", ()=>{
+  extraReports++;
+  toast("Report received. Depth and location added to this week calibration set.");
+  render();
+});
+document.querySelectorAll("#layerSeg button").forEach(b=>b.addEventListener("click", ()=>{
+  document.querySelectorAll("#layerSeg button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); layer=b.dataset.l; paintMap($("bigMap"), false);
+}));
+document.querySelectorAll(".tabbar .tab").forEach(t=>t.addEventListener("click", ()=>{
+  document.querySelectorAll(".tabbar .tab").forEach(x=>x.classList.remove("on")); t.classList.add("on");
+}));
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape" && story.on){ endStory(); return; }
+  if(e.key==="ArrowRight"){ if(story.on) endStory(); stop(); setStep(step+1); }
+  if(e.key==="ArrowLeft"){ if(story.on) endStory(); stop(); setStep(step-1); }
+  if(e.key===" "){ e.preventDefault(); if(story.on) endStory(); else play(); }
+  if(e.key==="s"||e.key==="S"){ story.on ? endStory() : startStory(); }
+});
+
+/* ======================= STORY MODE ======================= */
+/* A scripted 8-beat walkthrough that follows ONE barangay end to end:
+   flood → citizen report → three engines → risk emerges → ranked action → alert back to the citizen. */
+const TARGET = HOME;                       // Brgy. Marikina Flats
+const story = { on:false, i:0, main:null, subs:[], t0:0, dur:0, raf:null };
+
+function sq(sel){ return document.querySelector(sel); }
+function clearSpots(){ document.querySelectorAll(".spot").forEach(e=>e.classList.remove("spot","zoom")); }
+function spot(el, zoom){
+  clearSpots(); $("dim").classList.remove("on");
+  if(!el){ $("dim").classList.add("on"); placeCaption(null); return; }
+  el.classList.add("spot"); if(zoom!==false) el.classList.add("zoom");
+  placeCaption(el);
+}
+/* keep the caption clear of whatever is currently spotlighted */
+function placeCaption(el){
+  const c = $("caption");
+  c.classList.remove("top");
+  if(!el) return;
+  const b = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+  const bottomInStage = (r.bottom - b.top)/SCALE;
+  if(bottomInStage > 780) c.classList.add("top");   // card reaches the caption band -> flip above it
+}
+function hideCursor(){ $("cursor").classList.remove("on"); }
+function flashAlert(){ const a=$("alertCard"); a.classList.remove("flash"); void a.offsetWidth; a.classList.add("flash"); }
+function toStage(el){
+  const r = el.getBoundingClientRect(), b = stage.getBoundingClientRect();
+  return { x:(r.left - b.left)/SCALE + r.width/(2*SCALE), y:(r.top - b.top)/SCALE + r.height/(2*SCALE) };
+}
+function cursorTo(el, cb, delay){
+  if(!el) return;
+  const c = $("cursor"), p = toStage(el);
+  const dx = p.x - parseFloat(c.style.left||820), dy = p.y - parseFloat(c.style.top||760);
+  const dist = Math.hypot(dx, dy);
+  const travel = Math.min(0.95, 0.26 + dist/2100);      // longer reaches take longer, like a hand would
+  c.style.transitionDuration = "0.3s, " + travel.toFixed(2) + "s, " + travel.toFixed(2) + "s";
+  c.classList.add("on");
+  c.style.left = p.x+"px"; c.style.top = p.y+"px";
+  story.subs.push(setTimeout(()=>{
+    c.classList.add("click");
+    setTimeout(()=>c.classList.remove("click"), 620);
+    if(cb) cb();
+  }, delay||820));
+}
+function cap(n, text, beat){
+  const c = $("caption");
+  const nn=c.querySelector(".num"); if(nn) nn.textContent = n + " / 8";
+  c.querySelector(".txt").textContent = text;
+  const b = c.querySelector(".beat");
+  if(beat){ b.textContent = beat; b.style.display=""; } else b.style.display="none";
+  c.classList.add("on");
+  const sp = document.querySelector(".spot");
+  placeCaption(sp || null);
+}
+function overlay(which){
+  const o = $("overlay");
+  document.querySelectorAll(".ov").forEach(e=>e.classList.remove("on"));
+  if(!which){ o.classList.remove("on"); return; }
+  $(which).classList.add("on"); o.classList.add("on");
+}
+function layerSet(l){
+  layer = l;
+  document.querySelectorAll("#layerSeg button").forEach(b=>b.classList.toggle("on", b.dataset.l===l));
+  paintMap($("bigMap"), false);
+}
+/* smoothly walk the timeline from a to b over ms */
+function rollTo(a, b, ms){
+  setStep(a);
+  const n = Math.abs(b-a); if(!n) return;
+  const every = Math.max(60, ms/n); let cur = a;
+  const id = setInterval(()=>{
+    cur += (b>a?1:-1); setStep(cur);
+    if(cur===b) clearInterval(id);
+  }, every);
+  story.subs.push(id);
+}
+const S = () => [
+/* 1 */ { ms:3200, run(){
+    setStep(0); layerSet("flood"); focusZone=null; sel=TARGET; render();
+    clearSpots(); overlay("ovOpen");
+    cap(1, "One flood. One report. One early-action loop.");
+  }},
+/* 2 */ { ms:5600, run(){
+    overlay(null); setStep(0); layerSet("flood"); focusZone=TARGET; sel=TARGET; render();
+    spot(sq("#mapCard"));
+    cap(2, "Flood conditions detected at street level", "DAY 0 · FLOOD REPORTED");
+  }},
+/* 3 */ { ms:6400, run(){
+    cap(3, "Citizens provide real-time ground observations", "DAY 0 · GROUND TRUTH");
+    spot(sq(".phone"), false);
+    cursorTo($("btnReport"), ()=>$("btnReport").click(), 1050);
+    story.subs.push(setTimeout(()=>cursorTo($("btnReport"), ()=>$("btnReport").click(), 520), 3500));
+  }},
+/* 4 */ { ms:5600, run(){
+    clearSpots(); hideCursor(); overlay("ovFlow");
+    cap(4, "Three engines turn observations into risk intelligence");
+  }},
+/* 5 */ { ms:7400, run(){
+    overlay(null); layerSet("risk"); render();
+    spot(sq("#chartCard"));
+    cap(5, "Dengue risk is identified before cases surge", "WEEK 2–4 · RISK EMERGING");
+    rollTo(0, 8, 5300);
+    story.subs.push(setTimeout(()=>spot(sq("#mapCard")), 5700));
+  }},
+/* 6 */ { ms:8200, run(){
+    cap(6, "Decision-makers receive ranked, actionable priorities", "WEEK 5 · EARLY ACTION TRIGGERED");
+    rollTo(8, 10, 1400);
+    story.subs.push(setTimeout(()=>{
+      spot(sq("#rankCard"));
+      const row = sq("#rankBody tr");
+      cursorTo(row, ()=>{ if(row) row.click(); }, 860);
+    }, 1900));
+    story.subs.push(setTimeout(()=>{
+      spot(sq("#actCard"));
+      const b = sq("#actList button");
+      cursorTo(b, ()=>{ if(b) b.click(); }, 860);
+    }, 4900));
+  }},
+/* 7 */ { ms:7400, run(){
+    hideCursor();
+    cap(7, "Earlier warning. Faster action. Better coordination.", "WEEK 5–8 · CURVE BENDS DOWN");
+    spot(sq("#chartCard"));
+    rollTo(10, 24, 3900);
+    story.subs.push(setTimeout(()=>{ spot(sq(".phone"), false); flashAlert(); }, 4200));
+  }},
+/* 8 */ { ms:4400, run(){
+    clearSpots(); hideCursor(); overlay("ovClose");
+    cap(8, "From passive monitoring to proactive public action.");
+  }},
+];
+let SCENES = [];
+
+function runScene(){
+  story.subs.forEach(x=>{ clearTimeout(x); clearInterval(x); }); story.subs = [];
+  if(story.i >= SCENES.length) return endStory();
+  const sc = SCENES[story.i];
+  sc.run();
+  story.t0 = performance.now(); story.dur = sc.ms;
+  story.main = setTimeout(()=>{ story.i++; runScene(); }, sc.ms);
+}
+function tickBar(){
+  if(!story.on) return;
+  const p = Math.min(1, (performance.now()-story.t0)/story.dur);
+  const sb = sq("#storyBar i"); if(sb) sb.style.width = (((story.i + p)/SCENES.length)*100).toFixed(1)+"%";
+  story.raf = requestAnimationFrame(tickBar);
+}
+function startStory(){
+  stop();
+  interventionStep=null; extraReports=0; RISK=buildRisk(null);
+  $("btnAct").textContent="Deploy early action"; $("btnAct").disabled=false;
+  const cur = $("cursor");                       // park the pointer before the first glide
+  cur.style.transition = "none"; cur.style.left = "820px"; cur.style.top = "760px";
+  void cur.offsetWidth; cur.style.transition = "";
+  story.on = true; story.i = 0;
+  SCENES = S();
+  $("btnExit").classList.add("on");
+  $("btnStory").textContent = "■ Stop story";
+  runScene(); tickBar();
+}
+function endStory(){
+  story.on = false;
+  story.subs.forEach(x=>{ clearTimeout(x); clearInterval(x); }); story.subs=[];
+  clearTimeout(story.main); cancelAnimationFrame(story.raf);
+  clearSpots(); hideCursor(); overlay(null);
+  $("dim").classList.remove("on");
+  $("caption").classList.remove("on");
+  $("btnExit").classList.remove("on");
+  $("btnStory").textContent = "▶ Story mode";
+  focusZone = null; render();
+}
+$("btnStory").addEventListener("click", ()=> story.on ? endStory() : startStory());
+$("btnExit").addEventListener("click", endStory);
+
+(function markers(){
+  const evs=[[0,"Typhoon landfall"],[4,"Water cleared"],[11,"Breeding peak"],[17,"Case surge"],[25,"Decline"]];
+  $("events").innerHTML = evs.map(e=>{
+    const pct = Math.max(5, Math.min(93, e[0]/STEPS*100));
+    return `<div class="ev" style="left:${pct.toFixed(2)}%"><b>${e[1]}</b></div>`;
+  }).join("");
+})();
+
+drawMap($("bigMap"), false);
+drawMap($("phoneMap"), true);
+render();
+})();
+</script>
+</body>
+</html>
